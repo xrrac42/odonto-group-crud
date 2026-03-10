@@ -1,0 +1,111 @@
+{
+  "project_id": "seu_project_id_aqui",
+  "api": {
+    "port": 54321,
+    "schemas": ["public", "graphql_public"],
+    "extra_search_path": ["public", "extensions"],
+    "max_rows": 1000
+  },
+  "db": {
+    "port": 54322,
+    "shadow_port": 54320,
+    "major_version": 15,
+    "seed_file_path": "seed.sql",
+    "seed_dir_path": "seeds"
+  },
+  "realtime": {
+    "enabled": true,
+    "max_changes_per_second": 100,
+    "max_concurrent_users": 200,
+    "max_payload_bytes": 1000000
+  },
+  "studio": {
+    "enabled": true,
+    "port": 54323,
+    "protocols": ["http"]
+  },
+  "inbucket": {
+    "enabled": true,
+    "port": 54324,
+    "smtp_port": 54325,
+    "pop3_port": 54326,
+    "protocols": ["http"]
+  },
+  "storage": {
+    "file_size_limit": 52428800
+  },
+  "auth": {
+    "enabled": true,
+    "email": {
+      "enabled": true,
+      "provider": "service_role",
+      "autoconfirm": false
+    },
+    "external": {
+      "apple": {
+        "enabled": false
+      },
+      "azure": {
+        "enabled": false
+      },
+      "bitbucket": {
+        "enabled": false
+      },
+      "discord": {
+        "enabled": false
+      },
+      "facebook": {
+        "enabled": false
+      },
+      "figma": {
+        "enabled": false
+      },
+      "github": {
+        "enabled": false
+      },
+      "gitlab": {
+        "enabled": false
+      },
+      "google": {
+        "enabled": false
+      },
+      "keycloak": {
+        "enabled": false
+      },
+      "linkedin": {
+        "enabled": false
+      },
+      "linkedin_oidc": {
+        "enabled": false
+      },
+      "notion": {
+        "enabled": false
+      },
+      "twitch": {
+        "enabled": false
+      },
+      "twitter": {
+        "enabled": false
+      },
+      "slack": {
+        "enabled": false
+      },
+      "spotify": {
+        "enabled": false
+      },
+      "workos": {
+        "enabled": false
+      }
+    }
+  },
+  "functions": {
+    "node": {
+      "deno_dir": ".denorc"
+    }
+  },
+  "analytics": {
+    "enabled": false,
+    "port": 54327,
+    "vector_port": 54328
+  }
+}

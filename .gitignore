@@ -1,0 +1,44 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Credentials
+~/.odonto-group/
+credentials.txt
+secrets.txt
+
+# Node
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Database
+*.sql~
+
+# Build outputs
+/frontend/dist/
+
+# Supabase
+.supabase/
+supabase/.env.local
+supabase/.env.*.local

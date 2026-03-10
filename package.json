@@ -1,0 +1,8 @@
+{
+  "name": "odonto-group-crud",
+  "description": "Sistema de vendas de planos odontológicos - OdontoGroup",
+  "version": "1.0.0",
+  "keywords": ["odonto", "crud", "venda", "plano", "supabase", "react"],
+  "author": "Carlos Eduardo Silva Xavier",
+  "license": "MIT"
+}
