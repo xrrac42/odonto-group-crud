@@ -1,5 +1,5 @@
 // components/admin/AdminDashboard.tsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { FileText, Users, LogOut } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useSales } from '../../hooks/useSales';
@@ -12,9 +12,17 @@ export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<AdminTab>('sales');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
 
   const { sales, loading, error } = useSales(
-    statusFilter ? { status: statusFilter as any } : undefined
+    statusFilter || dateFrom || dateTo
+      ? {
+          ...(statusFilter ? { status: statusFilter as any } : {}),
+          ...(dateFrom ? { date_from: dateFrom } : {}),
+          ...(dateTo ? { date_to: dateTo } : {}),
+        }
+      : undefined
   );
 
   if (!user) {
@@ -82,6 +90,10 @@ export default function AdminDashboard() {
             error={error}
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
+            onDateFromChange={setDateFrom}
+            onDateToChange={setDateTo}
           />
         )}
 

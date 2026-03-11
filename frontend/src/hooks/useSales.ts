@@ -1,7 +1,7 @@
 // hooks/useSales.ts
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import type { Sale, SaleWithClient, SalesListFilter } from '../types';
+import type { SaleWithClient, SalesListFilter } from '../types';
 
 export function useSales(filter?: SalesListFilter) {
   const [sales, setSales] = useState<SaleWithClient[]>([]);
@@ -28,6 +28,18 @@ export function useSales(filter?: SalesListFilter) {
       if (filter?.plan_type) {
         console.log('🔍 Aplicando filtro de plano:', filter.plan_type);
         query = query.eq('plan_type', filter.plan_type);
+      }
+
+      if (filter?.date_from) {
+        console.log('📅 Aplicando filtro data inicial:', filter.date_from);
+        query = query.gte('created_at', `${filter.date_from}T00:00:00`);
+      }
+
+      if (filter?.date_to) {
+        console.log('📅 Aplicando filtro data final:', filter.date_to);
+        const endDate = new Date(`${filter.date_to}T00:00:00`);
+        endDate.setDate(endDate.getDate() + 1);
+        query = query.lt('created_at', endDate.toISOString());
       }
 
       console.log('📡 Executando query...');
@@ -76,7 +88,7 @@ export function useSales(filter?: SalesListFilter) {
       console.log('🧹 Limpando subscription');
       channel.unsubscribe();
     };
-  }, [filter?.status, filter?.plan_type]);
+  }, [filter?.status, filter?.plan_type, filter?.date_from, filter?.date_to]);
 
   return { sales, loading, error, refetch: loadSales };
 }

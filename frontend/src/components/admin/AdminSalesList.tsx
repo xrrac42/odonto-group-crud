@@ -1,8 +1,9 @@
 // components/admin/AdminSalesList.tsx
-import React, { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, Check, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CheckCircle2, XCircle, Check } from 'lucide-react';
 import { saleService } from '../../services/saleService';
 import type { SaleWithClient } from '../../types';
+import * as XLSX from 'xlsx';
 
 interface AdminSalesListProps {
   sales: SaleWithClient[];
@@ -10,6 +11,10 @@ interface AdminSalesListProps {
   error: string | null;
   statusFilter: string;
   onStatusFilterChange: (status: string) => void;
+  dateFrom: string;
+  dateTo: string;
+  onDateFromChange: (date: string) => void;
+  onDateToChange: (date: string) => void;
 }
 
 export default function AdminSalesList({
@@ -18,6 +23,10 @@ export default function AdminSalesList({
   error,
   statusFilter,
   onStatusFilterChange,
+  dateFrom,
+  dateTo,
+  onDateFromChange,
+  onDateToChange,
 }: AdminSalesListProps) {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -64,6 +73,42 @@ export default function AdminSalesList({
     }
   };
 
+  const getExportRows = () =>
+    sales.map((sale) => ({
+      ID: sale.id,
+      Cliente: sale.client?.nome || '',
+      CPF: sale.client?.cpf || '',
+      Operador: sale.operator?.nome || 'N/A',
+      Plano: sale.plan_type,
+      Status: sale.status,
+      Data: new Date(sale.created_at).toLocaleString('pt-BR'),
+      Email: sale.client?.email || '',
+      Telefone: sale.client?.telefone || '',
+    }));
+
+  const handleExportCSV = () => {
+    const rows = getExportRows();
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const csv = XLSX.utils.sheet_to_csv(worksheet, { FS: ';' });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const timestamp = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.download = `vendas-admin-${timestamp}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportExcel = () => {
+    const rows = getExportRows();
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Vendas');
+    const timestamp = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(workbook, `vendas-admin-${timestamp}.xlsx`);
+  };
+
   if (loading) {
     return <div className="text-center py-12">Carregando vendas...</div>;
   }
@@ -81,7 +126,7 @@ export default function AdminSalesList({
       {/* Filtros */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="font-semibold text-gray-900 mb-4">Filtros</h2>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap gap-4 items-end">
           <button
             onClick={() => onStatusFilterChange('')}
             className={`px-4 py-2 rounded-lg font-medium transition ${
@@ -121,6 +166,53 @@ export default function AdminSalesList({
             }`}
           >
             Aguardando Assinatura
+          </button>
+
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-600 mb-1">Data inicial</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => onDateFromChange(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg"
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-xs text-gray-600 mb-1">Data final</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => onDateToChange(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg"
+            />
+          </div>
+
+          <button
+            onClick={() => {
+              onStatusFilterChange('');
+              onDateFromChange('');
+              onDateToChange('');
+            }}
+            className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200"
+          >
+            Limpar filtros
+          </button>
+
+          <button
+            onClick={handleExportCSV}
+            disabled={sales.length === 0}
+            className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+          >
+            Exportar CSV
+          </button>
+
+          <button
+            onClick={handleExportExcel}
+            disabled={sales.length === 0}
+            className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            Exportar Excel
           </button>
         </div>
       </div>
