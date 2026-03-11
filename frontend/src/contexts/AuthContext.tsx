@@ -137,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(null);
 
       // Converter CPF para email fictício
-      const email = `${cpf}@sistema.local`;
+      const email = `${cpf}@operador.sistema`;
 
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
