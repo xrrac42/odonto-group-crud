@@ -47,7 +47,7 @@ export default function AdminUserManagement() {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:8080/v2/get-all-users?page=${page}&limit=${limit}`);
+      const response = await fetch(`https://api-odonto.cuidai.xyz/v2/get-all-users?page=${page}&limit=${limit}`);
       if (!response.ok) throw new Error('Erro ao buscar usuários');
       const result: PaginatedResponse = await response.json();
       setUsers(result.data || []);
@@ -98,7 +98,7 @@ export default function AdminUserManagement() {
         controller.abort();
       }, 15000);
       try {
-        const response = await fetch('http://localhost:8080/v2/create-operator', {
+        const response = await fetch('https://api-odonto.cuidai.xyz/v2/create-operator', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

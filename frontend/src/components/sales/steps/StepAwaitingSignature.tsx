@@ -56,7 +56,7 @@ export default function StepAwaitingSignature({
       if (!token) throw new Error('Sessão não encontrada')
 
       const res = await axios.get(
-  `http://localhost:8080/api/sales/${saleId}/signature`,
+  `https://api-odonto.cuidai.xyz/api/sales/${saleId}/signature`,
   {
     headers: {
       Authorization: `Bearer ${token}`,
