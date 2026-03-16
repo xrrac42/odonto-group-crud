@@ -2,6 +2,12 @@
 export type UserRole = 'admin' | 'operator';
 export type SaleStatus = 'draft' | 'awaiting_signature' | 'signed' | 'approved_manually';
 export type PlanType = 'plano_basico' | 'plano_standard' | 'plano_premium' | 'plano_alfa' | 'plano_beta' | 'plano_delta';
+export type PaymentMethod =
+  | 'conta_energia'
+  | 'boleto'
+  | 'pix_automatico'
+  | 'debito_conta'
+  | 'desconto_folha';
 
 export interface Profile {
   id: string;
@@ -49,9 +55,18 @@ export interface Sale {
   docuseal_submission_id?: string;
   docuseal_link?: string;
   // Campos de pagamento (plano_beta)
-  forma_pagamento?: string; // 'pix' | 'cartao_credito'
+  forma_pagamento?: string; // 'conta_energia' | 'boleto' | 'pix_automatico' | 'debito_conta' | 'desconto_folha'
   periodicidade_cobranca?: string; // 'mensal' | 'anual'
   valor_mensal?: number;
+  unidade_consumo?: string;
+  energia_companhia?: string;
+  pagamento_banco?: string;
+  pagamento_agencia?: string;
+  pagamento_conta?: string;
+  pagamento_orgao?: string;
+  pagamento_matricula?: string;
+  has_dependents?: boolean;
+  dependents?: string;
   created_at: string;
   updated_at: string;
   // Relacionamentos opcionais (com join)
@@ -92,6 +107,15 @@ export interface CreateEnvelopeRequest {
   formaPagamento?: string;
   periodicidadeCobranca?: string;
   valorMensal?: number;
+  unidadeConsumo?: string;
+  energiaCompanhia?: string;
+  pagamentoBanco?: string;
+  pagamentoAgencia?: string;
+  pagamentoConta?: string;
+  pagamentoOrgao?: string;
+  pagamentoMatricula?: string;
+  hasDependents?: boolean;
+  dependents?: string;
   saleId: string;
 }
 
@@ -146,6 +170,14 @@ export interface SaleFormData {
   forma_pagamento?: string;
   periodicidade_cobranca?: string;
   valor_mensal?: number;
+  energia_companhia?: string;
+  pagamento_banco?: string;
+  pagamento_agencia?: string;
+  pagamento_conta?: string;
+  pagamento_orgao?: string;
+  pagamento_matricula?: string;
+  has_dependents?: boolean;
+  dependents?: string;
 }
 
 // Draft com dados parciais salvos

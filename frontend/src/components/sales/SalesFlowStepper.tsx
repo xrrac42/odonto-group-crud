@@ -133,6 +133,29 @@ export default function SalesFlowStepper({ initialSale, saleId: propSaleId, init
                 client_telefone: client.telefone,
                 client_matricula_origem: client.matricula_origem,
                 client_orgao_origem: client.orgao_origem,
+                client_rg: client.rg,
+                client_orgao_expedidor: client.orgao_expedidor,
+                client_sexo: client.sexo,
+                client_estado_civil: client.estado_civil,
+                client_nome_social: client.nome_social,
+                client_endereco_logradouro: client.endereco_logradouro,
+                client_endereco_numero: client.endereco_numero,
+                client_endereco_complemento: client.endereco_complemento,
+                client_endereco_bairro: client.endereco_bairro,
+                client_endereco_cidade: client.endereco_cidade,
+                client_endereco_uf: client.endereco_uf,
+                client_endereco_cep: client.endereco_cep,
+                client_unidade_consumo: draft.unidade_consumo,
+                energia_companhia: draft.energia_companhia,
+                pagamento_banco: draft.pagamento_banco,
+                pagamento_agencia: draft.pagamento_agencia,
+                pagamento_conta: draft.pagamento_conta,
+                pagamento_orgao: draft.pagamento_orgao,
+                pagamento_matricula: draft.pagamento_matricula,
+                has_dependents: draft.has_dependents,
+                dependents: draft.dependents,
+                forma_pagamento: draft.forma_pagamento,
+                valor_mensal: draft.valor_mensal,
                 plan_type: draft.plan_type,
               });
             }
@@ -294,8 +317,31 @@ export default function SalesFlowStepper({ initialSale, saleId: propSaleId, init
         throw new Error('Todos os campos obrigatórios devem ser preenchidos');
       }
 
-      if (data.forma_pagamento === 'conta_luz' && !data.client_unidade_consumo) {
-        throw new Error('Unidade de consumo é obrigatória para Conta de Luz');
+      if (data.forma_pagamento === 'conta_energia') {
+        if (!data.client_unidade_consumo) {
+          throw new Error('Unidade de consumo é obrigatória para Conta de Energia');
+        }
+        if (!data.energia_companhia) {
+          throw new Error('Companhia de energia é obrigatória para Conta de Energia');
+        }
+      }
+
+      if (data.forma_pagamento === 'pix_automatico') {
+        if (!data.pagamento_banco || !data.pagamento_agencia || !data.pagamento_conta) {
+          throw new Error('Banco, agência e conta são obrigatórios para PIX Automático');
+        }
+      }
+
+      if (data.forma_pagamento === 'debito_conta') {
+        if (!data.pagamento_agencia || !data.pagamento_conta) {
+          throw new Error('Agência e conta são obrigatórios para Débito em Conta');
+        }
+      }
+
+      if (data.forma_pagamento === 'desconto_folha') {
+        if (!data.pagamento_orgao || !data.pagamento_matricula) {
+          throw new Error('Órgão e matrícula são obrigatórios para Desconto em Folha');
+        }
       }
 
       setFormData(data);
@@ -331,6 +377,14 @@ export default function SalesFlowStepper({ initialSale, saleId: propSaleId, init
           periodicidade_cobranca: 'mensal',
           valor_mensal: data.valor_mensal,
           unidade_consumo: data.client_unidade_consumo,
+          energia_companhia: data.energia_companhia,
+          pagamento_banco: data.pagamento_banco,
+          pagamento_agencia: data.pagamento_agencia,
+          pagamento_conta: data.pagamento_conta,
+          pagamento_orgao: data.pagamento_orgao,
+          pagamento_matricula: data.pagamento_matricula,
+          has_dependents: data.has_dependents,
+          dependents: data.dependents,
         },
         user.id
       );

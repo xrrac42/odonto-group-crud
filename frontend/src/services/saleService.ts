@@ -155,6 +155,15 @@ export const saleService = {
         forma_pagamento: formData.forma_pagamento,
         periodicidade_cobranca: formData.periodicidade_cobranca,
         valor_mensal: formData.valor_mensal,
+        unidade_consumo: formData.client_unidade_consumo,
+        energia_companhia: formData.energia_companhia,
+        pagamento_banco: formData.pagamento_banco,
+        pagamento_agencia: formData.pagamento_agencia,
+        pagamento_conta: formData.pagamento_conta,
+        pagamento_orgao: formData.pagamento_orgao,
+        pagamento_matricula: formData.pagamento_matricula,
+        has_dependents: !!formData.has_dependents,
+        dependents: formData.dependents,
       })
       .eq('id', draftId)
       .select()
@@ -209,62 +218,95 @@ export const saleService = {
       periodicidade_cobranca?: string;
       valor_mensal?: number;
       unidade_consumo?: string;
+      energia_companhia?: string;
+      pagamento_banco?: string;
+      pagamento_agencia?: string;
+      pagamento_conta?: string;
+      pagamento_orgao?: string;
+      pagamento_matricula?: string;
+      has_dependents?: boolean;
+      dependents?: string;
     },
     operatorId: string
   ): Promise<CreateEnvelopeResponse> {
     // Gerar UUID único para rastreamento
     const uniqueClientId = crypto.randomUUID();
 
-    const response = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-envelope`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({
-          saleId,
-          clientId: uniqueClientId,
-          clientName: clientData.nome,
-          clientEmail: clientData.email,
-          clientCPF: clientData.cpf,
-          clientPhone: clientData.telefone,
-          clientBirthDate: clientData.data_nascimento,
-          clientMotherName: clientData.nome_mae,
-          clientAddress: clientData.endereco_completo,
-          clientMatricula: clientData.matricula_origem,
-          clientOrgao: clientData.orgao_origem,
-          // Campos plano_beta
-          clientRG: clientData.rg,
-          clientOrgaoExpedidor: clientData.orgao_expedidor,
-          clientSexo: clientData.sexo,
-          clientEstadoCivil: clientData.estado_civil,
-          clientNomeSocial: clientData.nome_social,
-          clientEnderecoLogradouro: clientData.endereco_logradouro,
-          clientEnderecoNumero: clientData.endereco_numero,
-          clientEnderecoComplemento: clientData.endereco_complemento,
-          clientEnderecoBairro: clientData.endereco_bairro,
-          clientEnderecoCidade: clientData.endereco_cidade,
-          clientEnderecoUF: clientData.endereco_uf,
-          clientEnderecoCEP: clientData.endereco_cep,
-          // Dados da venda
-          planType: saleData.plan_type,
-          formaPagamento: saleData.forma_pagamento,
-          periodicidadeCobranca: saleData.periodicidade_cobranca,
-          valorMensal: saleData.valor_mensal,
-          unidadeConsumo: saleData.unidade_consumo,
-          operatorId,
-        }),
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-envelope`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            saleId,
+            clientId: uniqueClientId,
+            clientName: clientData.nome,
+            clientEmail: clientData.email,
+            clientCPF: clientData.cpf,
+            clientPhone: clientData.telefone,
+            clientBirthDate: clientData.data_nascimento,
+            clientMotherName: clientData.nome_mae,
+            clientAddress: clientData.endereco_completo,
+            clientMatricula: clientData.matricula_origem,
+            clientOrgao: clientData.orgao_origem,
+            // Campos plano_beta
+            clientRG: clientData.rg,
+            clientOrgaoExpedidor: clientData.orgao_expedidor,
+            clientSexo: clientData.sexo,
+            clientEstadoCivil: clientData.estado_civil,
+            clientNomeSocial: clientData.nome_social,
+            clientEnderecoLogradouro: clientData.endereco_logradouro,
+            clientEnderecoNumero: clientData.endereco_numero,
+            clientEnderecoComplemento: clientData.endereco_complemento,
+            clientEnderecoBairro: clientData.endereco_bairro,
+            clientEnderecoCidade: clientData.endereco_cidade,
+            clientEnderecoUF: clientData.endereco_uf,
+            clientEnderecoCEP: clientData.endereco_cep,
+            // Dados da venda
+            planType: saleData.plan_type,
+            formaPagamento: saleData.forma_pagamento,
+            periodicidadeCobranca: saleData.periodicidade_cobranca,
+            valorMensal: saleData.valor_mensal,
+            unidadeConsumo: saleData.unidade_consumo,
+            energiaCompanhia: saleData.energia_companhia,
+            pagamentoBanco: saleData.pagamento_banco,
+            pagamentoAgencia: saleData.pagamento_agencia,
+            pagamentoConta: saleData.pagamento_conta,
+            pagamentoOrgao: saleData.pagamento_orgao,
+            pagamentoMatricula: saleData.pagamento_matricula,
+            hasDependents: saleData.has_dependents,
+            dependents: saleData.dependents,
+            operatorId,
+          }),
+        }
+      );
+
+      const raw = await response.text();
+      const parsed = raw ? JSON.parse(raw) : null;
+
+      if (!response.ok) {
+        throw new Error(
+          parsed?.message || parsed?.error || `Erro ao criar envelope (${response.status})`
+        );
       }
-    );
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || 'Erro ao criar envelope');
+      return parsed as CreateEnvelopeResponse;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Timeout ao criar envelope. Verifique template do plano e tente novamente.');
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
-
-    return await response.json();
   },
 
   async updateSaleStatus(
