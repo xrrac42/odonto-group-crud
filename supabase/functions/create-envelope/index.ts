@@ -496,14 +496,37 @@ serve(async (req: Request) => {
 
     console.log("Calling DocuSeal API with template:", templateId);
 
-    const docuSealResponse = await fetch("https://api.docuseal.com/submissions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Auth-Token": DOCUSEAL_API_KEY,
-      },
-      body: JSON.stringify(docuSealPayload),
-    });
+    const docuSealController = new AbortController();
+    const docuSealTimeout = setTimeout(() => docuSealController.abort(), 20000);
+
+    let docuSealResponse: Response;
+    try {
+      docuSealResponse = await fetch("https://api.docuseal.com/submissions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Auth-Token": DOCUSEAL_API_KEY,
+        },
+        signal: docuSealController.signal,
+        body: JSON.stringify(docuSealPayload),
+      });
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        return new Response(
+          JSON.stringify({
+            error: "DocuSeal timeout",
+            message: `Timeout ao criar submissão no DocuSeal para plano ${effectivePayload.planType}`,
+          }),
+          {
+            status: 504,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+      throw err;
+    } finally {
+      clearTimeout(docuSealTimeout);
+    }
 
     console.log("DocuSeal response status:", docuSealResponse.status);
 

@@ -11,7 +11,7 @@ Sistema interno de vendas de planos odontológicos focado em performance e entre
 ## 🎯 Requisitos Críticos
 
 ### 1. Autenticação com CPF
-- ✅ Supabase Auth com email fictício (`CPF@sistema.local`)
+- ✅ Supabase Auth com email fictício (`CPF@operador.sistema`)
 - ✅ Frontend converte CPF para email antes de autenticar
 - ✅ Roles customizadas via tabela `profiles` (admin/operator)
 

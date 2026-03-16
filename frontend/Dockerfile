@@ -31,7 +31,19 @@ RUN rm -rf /usr/share/nginx/html/*
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Configuração do React Router para não dar 404 no F5
-RUN echo "server { listen 80; location / { root /usr/share/nginx/html; index index.html; tr>
+RUN cat <<'EOF' > /etc/nginx/conf.d/default.conf
+server {
+	listen 80;
+	server_name _;
+
+	root /usr/share/nginx/html;
+	index index.html;
+
+	location / {
+		try_files $uri $uri/ /index.html;
+	}
+}
+EOF
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
