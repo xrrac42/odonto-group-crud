@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, Save, Sparkles, Trash2 } from 'lucide-react';
+import { PRODUCTS, getMonthlyPrice, VALID_PLAN_TYPES } from '../../../constants/products';
 import type { SaleFormData } from '../../../types';
 
 interface DependentItem {
@@ -56,15 +57,10 @@ const clientDataSchema = z.object({
   pagamento_matricula: z.string().optional(),
   has_dependents: z.boolean().optional(),
   dependents: z.string().optional(),
-  valor_mensal: z.coerce.number().positive('Valor mensal deve ser maior que zero'),
-  plan_type: z.enum([
-    'plano_basico',
-    'plano_standard',
-    'plano_premium',
-    'plano_alfa',
-    'plano_beta',
-    'plano_delta',
-  ]),
+  // ✅ valor_mensal agora é calculado automaticamente, nunca vem do usuário
+  valor_mensal: z.coerce.number().positive('Valor mensal calculado automaticamente'),
+  // ✅ plan_type agora é obrigatório e validado contra os produtos
+  plan_type: z.enum(VALID_PLAN_TYPES as unknown as [string, ...string[]]),
 }).superRefine((data, ctx) => {
   if (data.forma_pagamento === 'conta_energia') {
     if (!data.client_unidade_consumo?.trim()) {
@@ -179,12 +175,29 @@ export default function StepClientData({
 
   const formaPagamento = watch('forma_pagamento');
   const hasDependents = watch('has_dependents');
+  const planType = watch('plan_type');
 
   const [dependentsList, setDependentsList] = useState<DependentItem[]>([]);
   const [dependentDraft, setDependentDraft] = useState<DependentItem>({ nome: '', cpf: '' });
   const [dependentError, setDependentError] = useState<string | null>(null);
 
-  const valorMensalRegister = register('valor_mensal');
+  // Debug: Log quando planType muda
+  useEffect(() => {
+    console.log('Watch updated - planType:', planType, 'typeof:', typeof planType);
+  }, [planType]);
+
+  // Recalcular valor mensal quando plan_type ou dependentes mudam
+  useEffect(() => {
+    console.log('useEffect triggered - planType:', planType, 'dependents:', dependentsList.length);
+    if (planType && planType.trim()) {
+      const basePrice = getMonthlyPrice(planType as string);
+      const totalPrice = basePrice + (basePrice * dependentsList.length);
+      setValue('valor_mensal', totalPrice, { shouldValidate: true });
+      console.log(`Plan updated: ${planType}, Base: R$${basePrice.toFixed(2)}, Total: R$${totalPrice.toFixed(2)}`);
+    } else {
+      console.log('No plan selected - planType is empty or undefined');
+    }
+  }, [planType, dependentsList, setValue]);
 
   const serializeDependents = (list: DependentItem[]) =>
     list.map((item) => `${item.nome} - CPF ${item.cpf}`).join('\n');
@@ -255,40 +268,40 @@ export default function StepClientData({
   };
 
   const fillDemoData = () => {
-    setValue('client_nome', 'Maria Silva Santos');
-    setValue('client_cpf', '12345678901');
-    setValue('client_data_nascimento', '1990-05-15');
-    setValue('client_nome_mae', 'Ana Silva Santos');
-    setValue('client_endereco_logradouro', 'Rua das Flores');
-    setValue('client_endereco_numero', '123');
-    setValue('client_endereco_complemento', 'Apto 12');
-    setValue('client_endereco_bairro', 'Centro');
-    setValue('client_endereco_cidade', 'Brasília');
-    setValue('client_endereco_uf', 'DF');
-    setValue('client_endereco_cep', '70387-070');
-    setValue('client_endereco_completo', 'Rua das Flores, 123, Apto 12 - Centro - Brasília/DF - CEP 70387-070');
-    setValue('client_email', 'maria.silva@email.com');
-    setValue('client_telefone', '(11) 98765-4321');
-    setValue('client_rg', '123456789');
+    setValue('client_nome', 'Carlos Eduardo Silva');
+    setValue('client_cpf', '98765432101');
+    setValue('client_data_nascimento', '1985-03-20');
+    setValue('client_nome_mae', 'Fernanda Silva Santos');
+    setValue('client_endereco_logradouro', 'Avenida Paulista');
+    setValue('client_endereco_numero', '1000');
+    setValue('client_endereco_complemento', 'Apto 501');
+    setValue('client_endereco_bairro', 'Bela Vista');
+    setValue('client_endereco_cidade', 'São Paulo');
+    setValue('client_endereco_uf', 'SP');
+    setValue('client_endereco_cep', '01311-100');
+    setValue('client_endereco_completo', 'Avenida Paulista, 1000, Apto 501 - Bela Vista - São Paulo/SP - CEP 01311-100');
+    setValue('client_email', 'carlos.silva@email.com');
+    setValue('client_telefone', '(11) 99876-5432');
+    setValue('client_rg', '987654321');
     setValue('client_orgao_expedidor', 'SSP-SP');
-    setValue('client_sexo', 'Feminino');
-    setValue('client_estado_civil', 'Solteira');
+    setValue('client_sexo', 'Masculino');
+    setValue('client_estado_civil', 'Casado');
     setValue('client_nome_social', '');
-    setValue('client_matricula_origem', '123456');
-    setValue('client_orgao_origem', 'Prefeitura Municipal');
-    setValue('forma_pagamento', 'pix_automatico');
-    setValue('pagamento_banco', 'Banco do Brasil');
-    setValue('pagamento_agencia', '1234');
-    setValue('pagamento_conta', '98765-4');
+    setValue('client_matricula_origem', '654321');
+    setValue('client_orgao_origem', 'Governo Federal');
+    setValue('forma_pagamento', 'boleto');
     setValue('has_dependents', true);
     const demoDependents = [
-      { nome: 'João Silva Filho', cpf: '11122233344' },
-      { nome: 'Ana Silva Santos', cpf: '55566677788' },
+      { nome: 'Julia Silva Santos', cpf: '12344556677' },
+      { nome: 'Pedro Silva Santos', cpf: '98877665544' },
     ];
     setDependentsList(demoDependents);
     setValue('dependents', serializeDependents(demoDependents));
-    setValue('valor_mensal', 89.9);
-    setValue('plan_type', 'plano_beta');
+    // Seleciona um plano novo - Odonto Caixa Beta (R$ 42,00)
+    setValue('plan_type', 'plano_odonto_beta');
+    // Valor total com 2 dependentes: 42 * (1 + 2) = 126
+    setValue('valor_mensal', 126);
+    console.log('Demo data filled with new plan: plano_odonto_beta');
   };
 
   const handleCepBlur = async () => {
@@ -644,28 +657,6 @@ export default function StepClientData({
         {/* Linha 6: Órgão de Origem */}
        
 
-        {/* Tipo de Plano */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tipo de Plano *
-          </label>
-          <select
-            {...register('plan_type')}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Selecione um plano</option>
-            <option value="plano_basico">Plano Básico</option>
-            <option value="plano_standard">Plano Standard</option>
-            <option value="plano_premium">Plano Premium</option>
-            <option value="plano_alfa">Plano Alfa</option>
-            <option value="plano_beta">Plano Beta</option>
-            <option value="plano_delta">Plano Delta</option>
-          </select>
-          {errors.plan_type && (
-            <p className="mt-1 text-sm text-red-600">{errors.plan_type.message}</p>
-          )}
-        </div>
-
         {/* Forma de Pagamento */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -838,7 +829,7 @@ export default function StepClientData({
 
           {hasDependents && (
             <div className="space-y-3">
-              <p className="text-sm font-medium text-gray-700">Dependentes *</p>
+              <p className="text-sm font-medium text-gray-700">Dependentes - Cada dependente adiciona o valor base do plano</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <input
@@ -909,33 +900,100 @@ export default function StepClientData({
               {errors.dependents && (
                 <p className="mt-1 text-sm text-red-600">{errors.dependents.message}</p>
               )}
+
+              {dependentsList.length > 0 && planType && (
+                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-900">
+                    Valor base: R$ {getMonthlyPrice(planType).toFixed(2)} + {dependentsList.length} dependente(s) x R$ {getMonthlyPrice(planType).toFixed(2)} = 
+                    <span className="font-bold"> R$ {(getMonthlyPrice(planType) * (1 + dependentsList.length)).toFixed(2)}</span>
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Valor Mensal *
+            Valor Mensal Total
           </label>
           <input
-            {...valorMensalRegister}
             type="text"
-            inputMode="decimal"
-            placeholder="89.90"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onBlur={(e) => {
-              valorMensalRegister.onBlur(e);
-              const raw = e.target.value?.replace(',', '.').trim();
-              const parsed = Number(raw);
-              if (!Number.isNaN(parsed) && parsed >= 0) {
-                e.target.value = parsed.toFixed(2);
-                setValue('valor_mensal', parsed, { shouldValidate: true });
-              }
-            }}
+            readOnly
+            value={planType ? (getMonthlyPrice(planType) * (1 + dependentsList.length)).toFixed(2) : ''}
+            placeholder="Selecione um plano"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-green-50 text-green-700 font-bold text-lg cursor-not-allowed"
           />
-          {errors.valor_mensal && (
-            <p className="mt-1 text-sm text-red-600">{errors.valor_mensal.message}</p>
+          <p className="mt-1 text-xs text-gray-500">
+            Valor total = valor do plano + (valor do plano x numero de dependentes)
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Selecione o Plano *
+          </label>
+          <div className="space-y-4">
+            {PRODUCTS.map((product) => (
+              <div key={product.id} className="border border-gray-200 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 mb-3">{product.name}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {product.plans.map((plan) => (
+                    <label
+                      key={plan.id}
+                      className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition ${
+                        planType === plan.planType
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:bg-blue-50'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        value={plan.planType}
+                        {...register('plan_type')}
+                        onChange={(e) => {
+                          console.log('Radio onChange - value:', e.target.value);
+                          // Se clicar no plano já selecionado, desbloqueia (limpa)
+                          if (planType === plan.planType) {
+                            setValue('plan_type', undefined, { shouldValidate: true });
+                            console.log('Selection cleared - plan was deselected');
+                          } else {
+                            setValue('plan_type', e.target.value as any, { shouldValidate: true });
+                            console.log('After setValue, current planType from form:', getValues('plan_type'));
+                          }
+                        }}
+                      />
+                      <div className="flex-1">
+                        <p className="font-medium text-gray-900">{plan.name}</p>
+                        <p className="text-sm text-green-600 font-semibold">
+                          R$ {plan.monthlyPrice.toFixed(2)}/mês
+                        </p>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          {errors.plan_type && (
+            <p className="mt-2 text-sm text-red-600">{errors.plan_type.message}</p>
           )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Valor Mensal (Calculado Automaticamente)
+          </label>
+          <input
+            type="text"
+            readOnly
+            value={planType ? getMonthlyPrice(planType).toFixed(2) : ''}
+            placeholder="Selecione um plano acima"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 font-semibold cursor-not-allowed"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Valor base do plano selecionado. Será adicionado o valor dos dependentes abaixo.
+          </p>
         </div>
 
         {/* Botões */}

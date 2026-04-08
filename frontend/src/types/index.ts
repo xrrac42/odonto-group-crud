@@ -1,7 +1,18 @@
 // types/index.ts
 export type UserRole = 'admin' | 'operator';
 export type SaleStatus = 'draft' | 'awaiting_signature' | 'signed' | 'approved_manually';
-export type PlanType = 'plano_basico' | 'plano_standard' | 'plano_premium' | 'plano_alfa' | 'plano_beta' | 'plano_delta';
+export type PlanType = 
+  | 'ligue_bem_estar'
+  | 'ligue_familia_protegida'
+  | 'ligue_protecao_360'
+  | 'odonto_caixa_alfa'
+  | 'odonto_caixa_beta'
+  | 'odonto_caixa_delta'
+  | 'ligue_saude_em_dia'
+  | 'ligue_viver_bem'
+  | 'liga_vida_plena'
+  | 'ligue_mais_cuidado'
+  | 'ligue_cuidado_total';
 export type PaymentMethod =
   | 'conta_energia'
   | 'boleto'

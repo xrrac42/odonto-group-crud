@@ -263,7 +263,16 @@ export default function SalesFlowStepper({ initialSale, saleId: propSaleId, init
             plan_type: sale.plan_type,
             forma_pagamento: sale.forma_pagamento,
             periodicidade_cobranca: sale.periodicidade_cobranca,
-            valor_mensal: sale.valor_mensal
+            valor_mensal: sale.valor_mensal,
+            unidade_consumo: sale.unidade_consumo,
+            energia_companhia: sale.energia_companhia,
+            pagamento_banco: sale.pagamento_banco,
+            pagamento_agencia: sale.pagamento_agencia,
+            pagamento_conta: sale.pagamento_conta,
+            pagamento_orgao: sale.pagamento_orgao,
+            pagamento_matricula: sale.pagamento_matricula,
+            has_dependents: sale.has_dependents,
+            dependents: sale.dependents,
           },
           user.id
         );

@@ -9,7 +9,7 @@ import {
   Copy,
 } from 'lucide-react'
 import axios from 'axios'
-import { supabase } from '../../../lib/supabaseClient'
+import { supabase, BACKEND_URL } from '../../../lib/supabaseClient'
 import { useAuthContext } from '../../../contexts/AuthContext'
 import type { Sale } from '../../../types'
 
@@ -55,20 +55,21 @@ export default function StepAwaitingSignature({
       const token = await getAccessToken()
       if (!token) throw new Error('Sessão não encontrada')
 
+      // ✅ CORRETO: Usa BACKEND_URL + endpoint /api/sales/signature/{id}
       const res = await axios.get(
-  `https://api-odonto.cuidai.xyz/api/sales/${saleId}/signature`,
-  {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Cache-Control': 'no-cache',
-      Pragma: 'no-cache',
-    },
-    params: {
-      _ts: Date.now(), // 🔑 cache buster
-    },
-    timeout: 8000,
-  }
-)
+        `${BACKEND_URL}/api/sales/signature/${saleId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Cache-Control': 'no-cache',
+            Pragma: 'no-cache',
+          },
+          params: {
+            _ts: Date.now(), // 🔑 cache buster
+          },
+          timeout: 8000,
+        }
+      )
 
       const data = res.data
 
@@ -112,7 +113,7 @@ export default function StepAwaitingSignature({
 
         <div>
           <p className="font-semibold">
-            {isSigned ? 'Assinatura concluída' : 'Aguardando assinatura'}
+            {isSigned ? 'Assinatura concluída' : ''}
           </p>
           <p className="text-sm mt-1">
             {isSigned

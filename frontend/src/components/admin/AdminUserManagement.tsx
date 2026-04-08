@@ -1,7 +1,8 @@
 // components/admin/AdminUserManagement.tsx
 import React, { useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase, BACKEND_URL } from '../../lib/supabaseClient';
 import { useAuth } from '../../hooks/useAuth';
+import { userService } from '../../services/userService';
 
 export interface User {
   id: string;
@@ -33,7 +34,7 @@ export default function AdminUserManagement() {
     cpf: '',
     nome: '',
     password: '',
-    role: 'operator' as const,
+    role: 'operator' as 'admin' | 'operator',
   });
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -47,7 +48,7 @@ export default function AdminUserManagement() {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`https://api-odonto.cuidai.xyz/v2/get-all-users?page=${page}&limit=${limit}`);
+      const response = await fetch(`${BACKEND_URL}/v2/get-all-users?page=${page}&limit=${limit}`);
       if (!response.ok) throw new Error('Erro ao buscar usuários');
       const result: PaginatedResponse = await response.json();
       setUsers(result.data || []);
@@ -85,43 +86,20 @@ export default function AdminUserManagement() {
       if (formData.password.length < 6) {
         throw new Error('Senha deve ter no mínimo 6 caracteres');
       }
-      // Timeout para requisição
-      const requestBody = {
-        cpf: formData.cpf,
-        nome: formData.nome,
-        password: formData.password,
-        role: formData.role,
-        adminUserId: user?.id || ''
-      };
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, 15000);
-      try {
-        const response = await fetch('https://api-odonto.cuidai.xyz/v2/create-operator', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody),
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data?.error || 'Erro ao criar usuário');
-        }
-        setFormSuccess(`Usuário ${formData.nome} criado com sucesso!`);
-        setFormData({ cpf: '', nome: '', password: '', role: 'operator' });
-        setShowForm(false);
-        await loadUsers();
-      } catch (fetchErr) {
-        clearTimeout(timeoutId);
-        if (fetchErr instanceof Error && fetchErr.name === 'AbortError') {
-          throw new Error('Timeout: A criação do usuário demorou muito. Tente novamente.');
-        }
-        throw fetchErr;
-      }
+
+      // Usar o userService com a mesma interface
+      await userService.createUser(
+        formData.cpf,
+        formData.nome,
+        formData.password,
+        formData.role,
+        user?.id || ''
+      );
+
+      setFormSuccess(`Usuário ${formData.nome} criado com sucesso!`);
+      setFormData({ cpf: '', nome: '', password: '', role: 'operator' });
+      setShowForm(false);
+      await loadUsers();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao criar usuário';
       setFormError(message);

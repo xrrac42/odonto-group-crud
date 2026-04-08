@@ -1,6 +1,7 @@
 // services/saleService.ts
-import { supabase, SUPABASE_ANON_KEY } from '../lib/supabaseClient';
+import { supabase, BACKEND_URL, getUserJWT } from '../lib/supabaseClient';
 import type { Sale, SaleFormData, CreateEnvelopeResponse } from '../types';
+import { getPlanTypeForBackend } from '../constants/products';
 
 export const saleService = {
   /**
@@ -147,11 +148,13 @@ export const saleService = {
     }
 
     // 3. Atualizar a venda
+    // IMPORTANTE: Não salvamos plan_type aqui! Novos planos são salvos apenas no backend Go
+    // O plan_type antigo (plano_basico) é mantido no Supabase para compatibilidade
     const { data: sale, error: saleError } = await supabase
       .from('sales')
       .update({
         client_id: clientId,
-        plan_type: formData.plan_type!,
+        // plan_type não é atualizado - os novos planos são salvos apenas no backend Go
         forma_pagamento: formData.forma_pagamento,
         periodicidade_cobranca: formData.periodicidade_cobranca,
         valor_mensal: formData.valor_mensal,
@@ -236,56 +239,66 @@ export const saleService = {
     const timeoutId = setTimeout(() => controller.abort(), 20000);
 
     try {
+      // Get the user's JWT token instead of using the API key
+      const jwt = await getUserJWT();
+      if (!jwt) {
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
+
+      // Construir payload com apenas campos que têm valores
+      const payload: Record<string, any> = {
+        saleId,
+        clientId: uniqueClientId,
+        clientName: clientData.nome,
+        clientEmail: clientData.email,
+        clientCPF: clientData.cpf,
+        clientBirthDate: clientData.data_nascimento,
+        clientMotherName: clientData.nome_mae,
+        // Campos de endereço obrigatórios
+        clientEnderecoLogradouro: clientData.endereco_logradouro,
+        clientEnderecoNumero: clientData.endereco_numero,
+        clientEnderecoComplemento: clientData.endereco_complemento,
+        clientEnderecoBairro: clientData.endereco_bairro,
+        clientEnderecoCidade: clientData.endereco_cidade,
+        clientEnderecoUF: clientData.endereco_uf,
+        clientEnderecoCEP: clientData.endereco_cep,
+        // Dados da venda
+        planType: getPlanTypeForBackend(saleData.plan_type),
+        operatorId,
+      };
+
+      // Adicionar campos opcionais apenas se preenchidos
+      if (clientData.telefone) payload.clientPhone = clientData.telefone;
+      if (clientData.rg) payload.clientRG = clientData.rg;
+      if (clientData.orgao_expedidor) payload.clientOrgaoExpedidor = clientData.orgao_expedidor;
+      if (clientData.sexo) payload.clientSexo = clientData.sexo;
+      if (clientData.estado_civil) payload.clientEstadoCivil = clientData.estado_civil;
+      if (clientData.nome_social) payload.clientNomeSocial = clientData.nome_social;
+      
+      // Campos de pagamento - incluir apenas se preenchidos (não null e não undefined)
+      if (saleData.forma_pagamento != null) payload.formaPagamento = saleData.forma_pagamento;
+      if (saleData.periodicidade_cobranca != null) payload.periodicidadeCobranca = saleData.periodicidade_cobranca;
+      if (saleData.valor_mensal != null) payload.valorMensal = saleData.valor_mensal;
+      if (saleData.unidade_consumo != null) payload.unidadeConsumo = saleData.unidade_consumo;
+      if (saleData.energia_companhia != null) payload.energiaCompanhia = saleData.energia_companhia;
+      if (saleData.pagamento_banco != null) payload.pagamentoBanco = saleData.pagamento_banco;
+      if (saleData.pagamento_agencia != null) payload.pagamentoAgencia = saleData.pagamento_agencia;
+      if (saleData.pagamento_conta != null) payload.pagamentoConta = saleData.pagamento_conta;
+      if (saleData.pagamento_orgao != null) payload.pagamentoOrgao = saleData.pagamento_orgao;
+      if (saleData.pagamento_matricula != null) payload.pagamentoMatricula = saleData.pagamento_matricula;
+      if (saleData.has_dependents != null) payload.hasDependents = saleData.has_dependents;
+      if (saleData.dependents != null) payload.dependents = saleData.dependents;
+
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-envelope`,
+        `${BACKEND_URL}/api/envelopes/create`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Authorization': `Bearer ${jwt}`,
           },
           signal: controller.signal,
-          body: JSON.stringify({
-            saleId,
-            clientId: uniqueClientId,
-            clientName: clientData.nome,
-            clientEmail: clientData.email,
-            clientCPF: clientData.cpf,
-            clientPhone: clientData.telefone,
-            clientBirthDate: clientData.data_nascimento,
-            clientMotherName: clientData.nome_mae,
-            clientAddress: clientData.endereco_completo,
-            clientMatricula: clientData.matricula_origem,
-            clientOrgao: clientData.orgao_origem,
-            // Campos plano_beta
-            clientRG: clientData.rg,
-            clientOrgaoExpedidor: clientData.orgao_expedidor,
-            clientSexo: clientData.sexo,
-            clientEstadoCivil: clientData.estado_civil,
-            clientNomeSocial: clientData.nome_social,
-            clientEnderecoLogradouro: clientData.endereco_logradouro,
-            clientEnderecoNumero: clientData.endereco_numero,
-            clientEnderecoComplemento: clientData.endereco_complemento,
-            clientEnderecoBairro: clientData.endereco_bairro,
-            clientEnderecoCidade: clientData.endereco_cidade,
-            clientEnderecoUF: clientData.endereco_uf,
-            clientEnderecoCEP: clientData.endereco_cep,
-            // Dados da venda
-            planType: saleData.plan_type,
-            formaPagamento: saleData.forma_pagamento,
-            periodicidadeCobranca: saleData.periodicidade_cobranca,
-            valorMensal: saleData.valor_mensal,
-            unidadeConsumo: saleData.unidade_consumo,
-            energiaCompanhia: saleData.energia_companhia,
-            pagamentoBanco: saleData.pagamento_banco,
-            pagamentoAgencia: saleData.pagamento_agencia,
-            pagamentoConta: saleData.pagamento_conta,
-            pagamentoOrgao: saleData.pagamento_orgao,
-            pagamentoMatricula: saleData.pagamento_matricula,
-            hasDependents: saleData.has_dependents,
-            dependents: saleData.dependents,
-            operatorId,
-          }),
+          body: JSON.stringify(payload),
         }
       );
 

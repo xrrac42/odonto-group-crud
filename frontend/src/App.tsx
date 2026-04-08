@@ -1,6 +1,5 @@
 import React from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
-import { Lightbulb } from 'lucide-react'
 import logo from '../assets/logo-colorida.png'
 import { AuthProvider } from './contexts/AuthContext'
 import OperatorLayout from './components/OperatorLayout'
@@ -132,22 +131,7 @@ function LoginPage() {
             {loading ? 'Autenticando...' : 'Entrar'}
           </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setCpf('12345678901')
-              setPassword('teste123')
-            }}
-            className="w-full px-4 py-2 border-2 border-green-500 text-green-600 rounded-lg hover:bg-green-50 transition font-medium"
-          >
-            🎬 Demo Admin
-          </button>
         </form>
-
-        <p className="text-xs text-gray-600 text-center mt-6 flex items-center justify-center gap-2">
-          <Lightbulb className="w-4 h-4 text-gray-500" />
-          <span>Demo: CPF 12345678901 / Senha teste123</span>
-        </p>
       </div>
     </div>
   )
